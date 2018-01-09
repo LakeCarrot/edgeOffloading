@@ -17,10 +17,9 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 // face recognition related lib
-import org.opencv.
 
 public class MainActivity extends AppCompatActivity {
-    static{ System.loadLibrary("opencv_java3"); }
+    static{ System.loadLibrary("opencv_java"); }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         new GrpcTask().execute();
         new FaceTask().execute();
+
     }
 
     private class GrpcTask extends AsyncTask<Void, Void, String> {

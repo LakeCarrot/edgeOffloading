@@ -60,5 +60,5 @@ dependencies {
     compile 'io.grpc:grpc-stub:1.8.0'
     compile 'javax.annotation:javax.annotation-api:1.2'
     testCompile 'junit:junit:4.12'
-    compile project(':openCVLibrary340')
+    compile project(':openCVLibrary24135')
 }
