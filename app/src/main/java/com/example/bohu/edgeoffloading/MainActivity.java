@@ -18,6 +18,7 @@ import io.grpc.ManagedChannelBuilder;
 
 // face recognition related lib
 
+
 public class MainActivity extends AppCompatActivity {
     static{ System.loadLibrary("opencv_java"); }
 
