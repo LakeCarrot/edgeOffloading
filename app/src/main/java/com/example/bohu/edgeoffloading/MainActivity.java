@@ -4,8 +4,18 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
+import org.opencv.core.Mat;
+import org.opencv.face.FaceRecognizer;
+import org.opencv.face.LBPHFaceRecognizer;
+import org.opencv.imgcodecs.Imgcodecs;
+
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import edgeOffloading.OffloadingGrpc;
@@ -16,7 +26,10 @@ import faceRecognition.FacerecognitionOuterClass.FaceRecognitionReply;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import static org.opencv.core.CvType.CV_32SC1;
+
 // face recognition related lib
+
 
 
 public class MainActivity extends AppCompatActivity {
@@ -70,8 +83,53 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void faceRecognition() {
+        String trainingDir = "trainDir";
+        Mat testImage = Imgcodecs.imread("testDir", Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
 
+        File root = new File(trainingDir);
+
+        FilenameFilter imgFilter = new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                name = name.toLowerCase();
+                return name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png");
+            }
+        };
+
+        File[] imageFiles = root.listFiles(imgFilter);
+
+        List<Mat> images = new ArrayList<>(imageFiles.length);
+
+        Mat labels = new Mat(imageFiles.length, 1, CV_32SC1);
+        IntBuffer labelsBuf = labels.
+
+
+        int counter = 0;
+
+        for(File image : imageFiles) {
+            Mat img = Imgcodecs.imread(image.getAbsolutePath(), Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+
+            int label = Integer.parseInt(image.getName().split("\\-")[0]);
+
+            images.set(counter, img);
+
+            labelsBuf.put(counter, label);
+
+            counter++;
+        }
+
+        FaceRecognizer face = LBPHFaceRecognizer.create();
+        face.train(images, labels);
+
+        int[] label = new int[1];
+        double[] confidence = new double[1];
+        face.predict(testImage, label, confidence);
+        int predictedLabel = label[0];
+
+        System.out.println("Predicted label: " + predictedLabel);
     }
+
+
     private class FaceTask extends AsyncTask<Void, Void, String> {
         private ManagedChannel mChannel;
         private String hostIP;
