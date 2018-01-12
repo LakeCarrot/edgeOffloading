@@ -33,7 +33,7 @@ import static org.opencv.core.CvType.CV_32SC1;
 
 
 public class MainActivity extends AppCompatActivity {
-    static{ System.loadLibrary("opencv_java"); }
+    static{ System.loadLibrary("opencv_java3"); }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         List<Mat> images = new ArrayList<>(imageFiles.length);
 
         Mat labels = new Mat(imageFiles.length, 1, CV_32SC1);
-        IntBuffer labelsBuf = labels.
+        //IntBuffer labelsBuf = labels.createBuffer();
 
 
         int counter = 0;
@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
 
             images.set(counter, img);
 
-            labelsBuf.put(counter, label);
+            //labelsBuf.put(counter, label);
 
             counter++;
         }
