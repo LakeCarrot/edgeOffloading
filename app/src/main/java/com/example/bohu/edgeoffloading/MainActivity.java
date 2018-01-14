@@ -137,9 +137,7 @@ public class MainActivity extends AppCompatActivity {
         //bb.asIntBuffer().put(labelsBuf);
 
         //Mat labels = new Mat(imageFiles.length, 1, CV_32SC1, bb);
-        Log.d("face recognition", "start training");
         face.train(images, new MatOfInt(labelsBuf));
-        Log.d("face recognition","finish training");
 
         int[] label = new int[1];
         double[] confidence = new double[1];
