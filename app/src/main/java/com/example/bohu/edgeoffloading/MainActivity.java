@@ -1,10 +1,16 @@
 package com.example.bohu.edgeoffloading;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.face.FaceRecognizer;
 import org.opencv.face.LBPHFaceRecognizer;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -13,6 +19,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +46,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        new GrpcTask().execute();
-        new FaceTask().execute();
+        // Check the I/O permission before doing any other operations
+        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            Log.d("main", "we don't have the write permission");
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        }
+
+        faceRecognition();
+        //new GrpcTask().execute();
+        //new FaceTask().execute();
 
     }
 
@@ -83,11 +100,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void faceRecognition() {
-        String trainingDir = "trainDir";
-        Mat testImage = Imgcodecs.imread("testDir", Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
-
-        File root = new File(trainingDir);
-
+        String trainingDir = "/trainFace/";
+        /*
+        code on IoT part when load data
+        */
+        File root = Environment.getExternalStorageDirectory();
+        File file = new File(root, "/testFace/"+ 1 + ".jpg");
+        Mat testImage = Imgcodecs.imread(file.getAbsolutePath(), Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+        if(testImage.empty()) {
+            Log.d("image", "wrong!!!");
+        }
+        //Mat testImage = Imgcodecs.imread("testDir", Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+        File trainImages = new File(root, trainingDir);
         FilenameFilter imgFilter = new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
@@ -95,38 +119,34 @@ public class MainActivity extends AppCompatActivity {
                 return name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png");
             }
         };
-
-        File[] imageFiles = root.listFiles(imgFilter);
-
+        File[] imageFiles =  trainImages.listFiles(imgFilter);
         List<Mat> images = new ArrayList<>(imageFiles.length);
-
-        Mat labels = new Mat(imageFiles.length, 1, CV_32SC1);
-        //IntBuffer labelsBuf = labels.createBuffer();
-
-
+        int[] labelsBuf =  new int[imageFiles.length];
         int counter = 0;
 
         for(File image : imageFiles) {
             Mat img = Imgcodecs.imread(image.getAbsolutePath(), Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
-
             int label = Integer.parseInt(image.getName().split("\\-")[0]);
-
-            images.set(counter, img);
-
-            //labelsBuf.put(counter, label);
-
+            images.add(img);
+            labelsBuf[counter] = label;
             counter++;
         }
 
         FaceRecognizer face = LBPHFaceRecognizer.create();
-        face.train(images, labels);
+        //ByteBuffer bb = ByteBuffer.allocate(labelsBuf.length * 4);
+        //bb.asIntBuffer().put(labelsBuf);
+
+        //Mat labels = new Mat(imageFiles.length, 1, CV_32SC1, bb);
+        Log.d("face recognition", "start training");
+        face.train(images, new MatOfInt(labelsBuf));
+        Log.d("face recognition","finish training");
 
         int[] label = new int[1];
         double[] confidence = new double[1];
         face.predict(testImage, label, confidence);
         int predictedLabel = label[0];
 
-        System.out.println("Predicted label: " + predictedLabel);
+        Log.d("face recognition", "Predicted label: " + predictedLabel);
     }
 
 
