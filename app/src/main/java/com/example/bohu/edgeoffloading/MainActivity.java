@@ -54,9 +54,22 @@ public class MainActivity extends AppCompatActivity {
             Log.d("main", "we don't have the write permission");
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
+        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
 
+            // Should we show an explanation?
+            if (shouldShowRequestPermissionRationale(
+                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                // Explain to the user why we need to read the contacts
+            }
+
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    2);
+
+            return;
+        }
         faceRecognition();
-        //new GrpcTask().execute();
+        ///new GrpcTask().execute();
         //new FaceTask().execute();
 
     }
@@ -70,8 +83,8 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(Void... nothing) {
             try {
                 // first version use static IP and port
-                hostIP = "172.28.143.136";
-                hostPort = 50051;
+                hostIP = "172.28.142.176";
+                hostPort = 50052;
                 mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                         .usePlaintext(true)
                         .build();
@@ -101,16 +114,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void faceRecognition() {
         String trainingDir = "/trainFace/";
-        /*
-        code on IoT part when load data
-        */
+        Log.e("Rui","s11");
         File root = Environment.getExternalStorageDirectory();
         File file = new File(root, "/testFace/"+ 1 + ".jpg");
         Mat testImage = Imgcodecs.imread(file.getAbsolutePath(), Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
         if(testImage.empty()) {
             Log.d("image", "wrong!!!");
         }
-        //Mat testImage = Imgcodecs.imread("testDir", Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
         File trainImages = new File(root, trainingDir);
         FilenameFilter imgFilter = new FilenameFilter() {
             @Override
@@ -119,11 +129,11 @@ public class MainActivity extends AppCompatActivity {
                 return name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png");
             }
         };
+        Log.e("Rui","s22");
         File[] imageFiles =  trainImages.listFiles(imgFilter);
         List<Mat> images = new ArrayList<>(imageFiles.length);
         int[] labelsBuf =  new int[imageFiles.length];
         int counter = 0;
-
         for(File image : imageFiles) {
             Mat img = Imgcodecs.imread(image.getAbsolutePath(), Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
             int label = Integer.parseInt(image.getName().split("\\-")[0]);
@@ -131,20 +141,26 @@ public class MainActivity extends AppCompatActivity {
             labelsBuf[counter] = label;
             counter++;
         }
-
+        Log.e("Rui","start to train");
         FaceRecognizer face = LBPHFaceRecognizer.create();
-        //ByteBuffer bb = ByteBuffer.allocate(labelsBuf.length * 4);
-        //bb.asIntBuffer().put(labelsBuf);
-
-        //Mat labels = new Mat(imageFiles.length, 1, CV_32SC1, bb);
         face.train(images, new MatOfInt(labelsBuf));
 
-        int[] label = new int[1];
-        double[] confidence = new double[1];
-        face.predict(testImage, label, confidence);
-        int predictedLabel = label[0];
 
-        Log.d("face recognition", "Predicted label: " + predictedLabel);
+        long overallTimeStart = System.currentTimeMillis();
+        File folder = new File(root, "/testFace/");
+        File[] listOfFiles = folder.listFiles();
+        Log.e("Rui","start to test");
+        for (int i = 0; i < listOfFiles.length; i++) {
+            Log.e("Rui", Integer.toString(i));
+            file = new File(root, "/testFace/"+ listOfFiles[i].getName());
+            testImage = Imgcodecs.imread(file.getAbsolutePath(), Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+            int[] label = new int[1];
+            double[] confidence = new double[1];
+            face.predict(testImage, label, confidence);
+            int predictedLabel = label[0];
+        }
+        long overallTimeEnd = System.currentTimeMillis();
+        Log.e("Rui","overall processing time " + (overallTimeEnd - overallTimeStart));
     }
 
 
@@ -157,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(Void... nothing) {
             try {
                 // first version use static IP and port
-                hostIP = "172.28.143.136";
+                hostIP = "172.28.142.176";
                 hostPort = 50052;
                 mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                         .usePlaintext(true)
