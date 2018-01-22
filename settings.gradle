@@ -1,2 +1,2 @@
-include ':app'
+include ':app', ':models', ':aars', ':pocketsphinx-android-5prealpha-release'
 include ':openCVLibrary340'
