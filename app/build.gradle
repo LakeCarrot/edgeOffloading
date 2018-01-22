@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.google.protobuf'
+ant.importBuild 'assets.xml'
+preBuild.dependsOn(list, checksum)
+clean.dependsOn(clean_assets)
 
 android {
     compileSdkVersion 25
