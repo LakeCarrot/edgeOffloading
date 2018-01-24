@@ -37,6 +37,9 @@ import edgeOffloading.OffloadingOuterClass;
 import faceRecognition.FacerecognitionGrpc;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionRequest;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionReply;
+import speechRecognition.SpeechrecognitionGrpc;
+import speechRecognition.SpeechrecognitionOuterClass.SpeechRecognitionRequest;
+import speechRecognition.SpeechrecognitionOuterClass.SpeechRecognitionReply;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -53,8 +56,7 @@ import static org.opencv.core.CvType.CV_32SC1;
 
 
 
-public class MainActivity extends AppCompatActivity implements
-        RecognitionListener {
+public class MainActivity extends AppCompatActivity {
     static{ System.loadLibrary("opencv_java3"); }
 
     /**
@@ -129,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements
          */
 
 
-        new SetupTask(this).execute();
+        new SpeechRecognition(this).execute();
         //faceRecognition();
         ///new GrpcTask().execute();
         //new FaceTask().execute();
@@ -165,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements
 
         @Override
         protected void onPostExecute(String result) {
+
             try {
                 mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
@@ -264,32 +267,48 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+
     /**
      * Speech (start)
      */
-    private static class SetupTask extends AsyncTask<Void, Void, Exception> {
+    /*
+    private static class SpeechRecognition extends AsyncTask<Void, Void, String> {
+        private ManagedChannel mChannel;
+        private String hostIP;
+        private int hostPort;
         WeakReference<MainActivity> activityReference;
-        SetupTask(MainActivity activity) {
-            this.activityReference = new WeakReference<>(activity);
-        }
+
         @Override
-        protected Exception doInBackground(Void... params) {
+        protected String doInBackground(Void... params) {
             try {
-                Assets assets = new Assets(activityReference.get());
-                File assetDir = assets.syncAssets();
-                activityReference.get().setupRecognizer(assetDir);
-            } catch (IOException e) {
-                return e;
+                // first version use static IP and port
+                hostIP = "172.28.142.176";
+                hostPort = 50052;
+                Log.e("Rui", "try to connect");
+                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                        .usePlaintext(true)
+                        .build();
+                SpeechrecognitionGrpc.SpeechrecognitionBlockingStub stub = SpeechrecognitionGrpc.newBlockingStub(mChannel);
+                SpeechRecognitionRequest message = SpeechRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
+                Log.e("Rui", "send message");
+                SpeechRecognitionReply reply = stub.offloading(message);
+                Log.e("Rui", "receive reply" + reply.getMessage());
+                return reply.getMessage();
+            } catch(Exception e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                pw.flush();
+                return String.format("Failed... : %n%s", sw);
             }
-            return null;
         }
+
         @Override
-        protected void onPostExecute(Exception result) {
-            if (result != null) {
-                ((TextView) activityReference.get().findViewById(R.id.caption_text))
-                        .setText("Failed to init recognizer " + result);
-            } else {
-                activityReference.get().switchSearch(KWS_SEARCH);
+        protected void onPostExecute(String result) {
+            try {
+                mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -303,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Recognizer initialization is a time-consuming and it involves IO,
                 // so we execute it in async task
-                new SetupTask(this).execute();
+                new SetupTask().execute();
             } else {
                 finish();
             }
@@ -320,11 +339,7 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    /**
-     * In partial result we get quick updates about current hypothesis. In
-     * keyword spotting mode we can react here, in other modes we need to wait
-     * for final result in onResult.
-     */
+
     @Override
     public void onPartialResult(Hypothesis hypothesis) {
         if (hypothesis == null)
@@ -343,9 +358,7 @@ public class MainActivity extends AppCompatActivity implements
             ((TextView) findViewById(R.id.result_text)).setText(text);
     }
 
-    /**
-     * This callback is called when we stop the recognizer.
-     */
+
     @Override
     public void onResult(Hypothesis hypothesis) {
         ((TextView) findViewById(R.id.result_text)).setText("");
@@ -359,9 +372,6 @@ public class MainActivity extends AppCompatActivity implements
     public void onBeginningOfSpeech() {
     }
 
-    /**
-     * We stop recognizer here to get a final result
-     */
     @Override
     public void onEndOfSpeech() {
         if (!recognizer.getSearchName().equals(KWS_SEARCH))
@@ -394,9 +404,7 @@ public class MainActivity extends AppCompatActivity implements
                 .getRecognizer();
         recognizer.addListener(this);
 
-        /* In your application you might not need to add all those searches.
-          They are added here for demonstration. You can leave just one.
-         */
+
 
         // Create keyword-activation search.
         recognizer.addKeyphraseSearch(KWS_SEARCH, KEYPHRASE);
@@ -427,7 +435,7 @@ public class MainActivity extends AppCompatActivity implements
     public void onTimeout() {
         switchSearch(KWS_SEARCH);
     }
-
+*/
     /**
      * Speech (end)
      */
