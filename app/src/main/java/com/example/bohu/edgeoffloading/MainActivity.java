@@ -110,11 +110,10 @@ public class MainActivity extends AppCompatActivity {
          * Face recognition (end)
          */
         //new LocalSpeechRecognition(this).execute();
-        new RemoteSpeechRecognition(this).execute();
+        new RemoteSpeechRecognition().execute();
         //faceRecognition();
         ///new GrpcTask().execute();
         //new FaceTask().execute();
-
     }
 
     private class GrpcTask extends AsyncTask<Void, Void, String> {

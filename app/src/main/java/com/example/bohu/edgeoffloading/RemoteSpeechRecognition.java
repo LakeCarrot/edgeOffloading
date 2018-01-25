@@ -28,8 +28,7 @@ import speechRecognition.SpeechrecognitionOuterClass;
 
 import static android.widget.Toast.makeText;
 
-public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> implements
-        RecognitionListener {
+public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> {
     private ManagedChannel mChannel;
     private String hostIP;
     private int hostPort;
@@ -41,11 +40,6 @@ public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> imple
     private static final String DIGITS_SEARCH = "digits";
     private static final String PHONE_SEARCH = "phones";
     private static final String MENU_SEARCH = "menu";
-
-    WeakReference<MainActivity> activityReference;
-    RemoteSpeechRecognition(MainActivity activity) {
-        this.activityReference = new WeakReference<>(activity);
-    }
 
     @Override
     protected String doInBackground(Void... params) {
@@ -80,70 +74,4 @@ public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> imple
             Thread.currentThread().interrupt();
         }
     }
-
-    @Override
-    public void onPartialResult(Hypothesis hypothesis) {
-        if (hypothesis == null)
-            return;
-
-        String text = hypothesis.getHypstr();
-        if (text.equals(KEYPHRASE))
-            switchSearch(MENU_SEARCH);
-        else if (text.equals(DIGITS_SEARCH))
-            switchSearch(DIGITS_SEARCH);
-        else if (text.equals(PHONE_SEARCH))
-            switchSearch(PHONE_SEARCH);
-        else if (text.equals(FORECAST_SEARCH))
-            switchSearch(FORECAST_SEARCH);
-        else
-            ((TextView) activityReference.get().findViewById(R.id.result_text)).setText(text);
-    }
-
-    @Override
-    public void onEndOfSpeech() {
-        if (!recognizer.getSearchName().equals(KWS_SEARCH))
-            switchSearch(KWS_SEARCH);
-    }
-
-    private void switchSearch(String searchName) {
-        recognizer.stop();
-
-        // If we are not spotting, start listening with timeout (10000 ms or 10 seconds).
-        if (searchName.equals(KWS_SEARCH))
-            recognizer.startListening(searchName);
-        else
-            recognizer.startListening(searchName, 10000);
-
-
-
-        String caption = activityReference.get().getResources().getString(captions.get(searchName));
-        ((TextView) activityReference.get().findViewById(R.id.caption_text)).setText(caption);
-    }
-
-    @Override
-    public void onError(Exception error) {
-        ((TextView) activityReference.get().findViewById(R.id.caption_text)).setText(error.getMessage());
-    }
-
-    @Override
-    public void onTimeout() {
-        switchSearch(KWS_SEARCH);
-    }
-
-    @Override
-    public void onBeginningOfSpeech() {
-    }
-
-    @Override
-    public void onResult(Hypothesis hypothesis) {
-        ((TextView) activityReference.get().findViewById(R.id.result_text)).setText("");
-        if (hypothesis != null) {
-            String text = hypothesis.getHypstr();
-            makeText(activityReference.get().getApplicationContext(), text, Toast.LENGTH_SHORT).show();
-        }
-    }
 }
-
-
-
-
