@@ -109,29 +109,8 @@ public class MainActivity extends AppCompatActivity {
         /**
          * Face recognition (end)
          */
-
-        /**
-         * Speech recognition (start)
-         */
-        // Prepare the data for UI
-        captions = new HashMap<>();
-        captions.put(KWS_SEARCH, R.string.kws_caption);
-        captions.put(MENU_SEARCH, R.string.menu_caption);
-        captions.put(DIGITS_SEARCH, R.string.digits_caption);
-        captions.put(PHONE_SEARCH, R.string.phone_caption);
-        captions.put(FORECAST_SEARCH, R.string.forecast_caption);
-        // Check if user has given permission to record audio
-        int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
-            return;
-        }
-        /**
-         * Speech recognition (end)
-         */
-
-
-        new SpeechRecognition(this).execute();
+        //new LocalSpeechRecognition(this).execute();
+        new RemoteSpeechRecognition(this).execute();
         //faceRecognition();
         ///new GrpcTask().execute();
         //new FaceTask().execute();

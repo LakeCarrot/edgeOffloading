@@ -28,7 +28,7 @@ import speechRecognition.SpeechrecognitionOuterClass;
 
 import static android.widget.Toast.makeText;
 
-public class SpeechRecognition extends AsyncTask<Void, Void, String> implements
+public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> implements
         RecognitionListener {
     private ManagedChannel mChannel;
     private String hostIP;
@@ -43,7 +43,7 @@ public class SpeechRecognition extends AsyncTask<Void, Void, String> implements
     private static final String MENU_SEARCH = "menu";
 
     WeakReference<MainActivity> activityReference;
-    SpeechRecognition(MainActivity activity) {
+    RemoteSpeechRecognition(MainActivity activity) {
         this.activityReference = new WeakReference<>(activity);
     }
 
