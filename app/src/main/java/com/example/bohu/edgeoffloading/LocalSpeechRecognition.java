@@ -41,7 +41,7 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
     private static final String FORECAST_SEARCH = "forecast";
     private static final String DIGITS_SEARCH = "digits";
     private static final String PHONE_SEARCH = "phones";
-    private static final String MENU_SEARCH = "menu";
+    private static final String MENU_SEARCH = "phones";
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
     WeakReference<MainActivity> activityReference;
@@ -74,14 +74,13 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
         }
         return null;
     }
+
     @Override
     protected void onPostExecute(Exception result) {
-        Log.e("Rui", "call onPostExecute");
         if (result != null) {
-            ((TextView) activityReference.get().findViewById(R.id.caption_text))
-                    .setText("Failed to init recognizer " + result);
+            Log.d("[Speech]","Cannot setup a recognizer");
         } else {
-            switchSearch(KWS_SEARCH);
+            switchSearch(MENU_SEARCH);
         }
     }
 
@@ -92,7 +91,6 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
         recognizer = SpeechRecognizerSetup.defaultSetup()
                 .setAcousticModel(new File(assetsDir, "en-us-ptm"))
                 .setDictionary(new File(assetsDir, "cmudict-en-us.dict"))
-
                 .setRawLogDir(assetsDir) // To disable logging of raw audio comment out this call (takes a lot of space on the device)
 
                 .getRecognizer();
@@ -101,7 +99,7 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
         /* In your application you might not need to add all those searches.
           They are added here for demonstration. You can leave just one.
          */
-
+/*
         // Create keyword-activation search.
         recognizer.addKeyphraseSearch(KWS_SEARCH, KEYPHRASE);
 
@@ -116,7 +114,7 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
         // Create language model search
         File languageModel = new File(assetsDir, "weather.dmp");
         recognizer.addNgramSearch(FORECAST_SEARCH, languageModel);
-
+*/
         // Phonetic search
         File phoneticModel = new File(assetsDir, "en-phone.dmp");
         recognizer.addAllphoneSearch(PHONE_SEARCH, phoneticModel);
@@ -128,6 +126,10 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
             return;
 
         String text = hypothesis.getHypstr();
+        Log.d("[Rui]", text);
+
+        /*
+        String text = hypothesis.getHypstr();
         if (text.equals(KEYPHRASE))
             switchSearch(MENU_SEARCH);
         else if (text.equals(DIGITS_SEARCH))
@@ -138,27 +140,18 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
             switchSearch(FORECAST_SEARCH);
         else
             ((TextView) activityReference.get().findViewById(R.id.result_text)).setText(text);
+        */
     }
 
     @Override
     public void onEndOfSpeech() {
-        if (!recognizer.getSearchName().equals(KWS_SEARCH))
-            switchSearch(KWS_SEARCH);
+        switchSearch(MENU_SEARCH);
     }
 
     private void switchSearch(String searchName) {
         recognizer.stop();
-
-        // If we are not spotting, start listening with timeout (10000 ms or 10 seconds).
-        if (searchName.equals(KWS_SEARCH))
-            recognizer.startListening(searchName);
-        else
-            recognizer.startListening(searchName, 10000);
-
-        Log.e("Rui", "searchName: " + searchName);
-        String caption = activityReference.get().getResources().getString(captions.get(searchName));
-        Log.e("Rui", "caption: " + caption);
-        ((TextView) activityReference.get().findViewById(R.id.caption_text)).setText(caption);
+        Log.e("Rui", "switchSearch searchName: " + searchName);
+        recognizer.startListening(searchName);
     }
 
     @Override
@@ -168,20 +161,19 @@ public class LocalSpeechRecognition extends AsyncTask<Void, Void, Exception> imp
 
     @Override
     public void onTimeout() {
-        switchSearch(KWS_SEARCH);
+        switchSearch(MENU_SEARCH);
     }
 
     @Override
     public void onBeginningOfSpeech() {
+        Log.e("Rui", "onBeginningOfSpeech");
     }
 
     @Override
     public void onResult(Hypothesis hypothesis) {
-        ((TextView) activityReference.get().findViewById(R.id.result_text)).setText("");
         if (hypothesis != null) {
             String text = hypothesis.getHypstr();
             Log.e("Rui", "onResult text: " + text);
-            makeText(activityReference.get().getApplicationContext(), text, Toast.LENGTH_SHORT).show();
         }
     }
 }
