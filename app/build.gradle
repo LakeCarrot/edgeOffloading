@@ -21,6 +21,9 @@ android {
     configurations.all {
         resolutionStrategy.force 'com.google.code.findbugs:jsr305:3.0.0'
     }
+    repositories {
+        maven { url "https://jitpack.io" }
+    }
 }
 
 protobuf {
@@ -61,4 +64,6 @@ dependencies {
     compile 'javax.annotation:javax.annotation-api:1.2'
     testCompile 'junit:junit:4.12'
     compile project(':openCVLibrary340')
+    compile 'com.github.SandroMachado:openalpr-android:1.1.2'
+    compile 'com.google.code.gson:gson:2.5'
 }

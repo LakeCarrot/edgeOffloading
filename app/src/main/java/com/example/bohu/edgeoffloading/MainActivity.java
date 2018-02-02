@@ -9,6 +9,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.google.gson.Gson;
+
+import org.openalpr.OpenALPR;
+import org.openalpr.model.Results;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfInt;
 import org.opencv.face.FaceRecognizer;
@@ -42,6 +46,9 @@ import static org.opencv.core.CvType.CV_32SC1;
 public class MainActivity extends AppCompatActivity {
     static{ System.loadLibrary("opencv_java3"); }
 
+    private String openAlprConfFile;
+    private String ANDROID_DATA_DIR;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,10 +62,39 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
 
-        faceRecognition();
-        //new GrpcTask().execute();
-        //new FaceTask().execute();
+        // do initialization here for each application
+        // TODO: face recognition, need to load model here
 
+        // plate recognition, load conf file
+        ANDROID_DATA_DIR = this.getApplicationInfo().dataDir;
+        openAlprConfFile = ANDROID_DATA_DIR + File.separatorChar + "runtime_data" + File.separatorChar + "openalpr.conf";
+
+        //faceRecognition();
+        //new GrpcTask().execute();
+        //requestSending("172.28.143.136", 50051);
+        //new FaceTask().execute();
+        plateRecognition();
+
+    }
+
+    private void requestSending(String hostIP, int hostPort) {
+        ManagedChannel managedChannel;
+        managedChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                .usePlaintext(true)
+                .build();
+        try {
+            // first version use static IP and port
+            OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(managedChannel);
+            OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("Who are you?").build();
+            OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
+            Log.d("requestSending", reply.getMessage());
+        } catch(Exception e) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            pw.flush();
+        }
+        managedChannel.shutdown();
     }
 
     private class GrpcTask extends AsyncTask<Void, Void, String> {
@@ -147,6 +183,19 @@ public class MainActivity extends AppCompatActivity {
         Log.d("face recognition", "Predicted label: " + predictedLabel);
     }
 
+    private void plateRecognition() {
+        File root = Environment.getExternalStorageDirectory();
+        Log.d("OPEN ALPR", root.getAbsolutePath());
+        File file = new File(root, "/plate_data/3.jpg");
+        OpenALPR openalpr = OpenALPR.Factory.create(MainActivity.this, ANDROID_DATA_DIR);
+        long begin = System.currentTimeMillis();
+        String result = openalpr.recognizeWithCountryRegionNConfig("us", "", file.getAbsolutePath(), openAlprConfFile, 10);
+        long end = System.currentTimeMillis();
+        Log.d("Measured", "" + (end - begin)/1000.0);
+        final Results results = new Gson().fromJson(result, Results.class);
+        Log.d("OPEN ALPR", "Processing time: " + String.format("%.2f", ((results.getProcessingTimeMs() / 1000.0) % 60)) + " seconds");
+        Log.d("OPEN ALPR", result);
+    }
 
     private class FaceTask extends AsyncTask<Void, Void, String> {
         private ManagedChannel mChannel;
