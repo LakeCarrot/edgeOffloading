@@ -17,7 +17,7 @@ syntax = "proto3";
 package edgeOffloading;
 
 service Offloading {
-    rpc StartService (OffloadingRequest) returns (OffloadingReply) {}
+    rpc startService (OffloadingRequest) returns (OffloadingReply) {}
 }
 
 message OffloadingRequest {

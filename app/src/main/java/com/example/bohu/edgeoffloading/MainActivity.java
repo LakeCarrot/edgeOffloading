@@ -10,6 +10,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,6 +39,8 @@ import edgeOffloading.OffloadingOuterClass;
 import faceRecognition.FacerecognitionGrpc;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionRequest;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionReply;
+import edgeOffloading.OffloadingOuterClass.OffloadingRequest;
+import edgeOffloading.OffloadingOuterClass.OffloadingReply;
 import speechRecognition.SpeechrecognitionGrpc;
 import speechRecognition.SpeechrecognitionOuterClass.SpeechRecognitionRequest;
 import speechRecognition.SpeechrecognitionOuterClass.SpeechRecognitionReply;
@@ -109,8 +113,25 @@ public class MainActivity extends AppCompatActivity {
         /**
          * Face recognition (end)
          */
+        Button button=(Button) findViewById(R.id.remoteGprc);
+        button.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                Log.e("Rui","remote grpc.");
+                new GrpcTask().execute();
+                Log.e("Rui","remote speech recognition.");
+                new RemoteSpeechRecognition().execute();
+            }
+        });
+
+        Button button2=(Button) findViewById(R.id.remoteSpeech);
+        button2.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                Log.e("Rui","remote speech recognition.");
+                new RemoteSpeechRecognition().execute();
+            }
+        });
         //new LocalSpeechRecognition(this).execute();
-        new RemoteSpeechRecognition().execute();
+        //new RemoteSpeechRecognition().execute();
         //faceRecognition();
         //new FaceTask().execute();
     }
@@ -166,6 +187,43 @@ public class MainActivity extends AppCompatActivity {
         Log.e("Rui","overall processing time " + (overallTimeEnd - overallTimeStart));
     }
 
+    private class GrpcTask extends AsyncTask<Void, Void, String> {
+        private ManagedChannel mChannel;
+        private String hostIP;
+        private int hostPort;
+
+        @Override
+        protected String doInBackground(Void... nothing) {
+            try {
+                // first version use static IP and port
+                hostIP = "172.28.142.176";
+                hostPort = 50051;
+                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                        .usePlaintext(true)
+                        .build();
+                OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
+                OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("Who are you?").build();
+                OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
+                return reply.getMessage();
+            } catch(Exception e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                pw.flush();
+                return String.format("Failed... : %n%s", sw);
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            System.out.println(result);
+        }
+    }
 
     private class FaceTask extends AsyncTask<Void, Void, String> {
         private ManagedChannel mChannel;
@@ -181,9 +239,18 @@ public class MainActivity extends AppCompatActivity {
                 mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                         .usePlaintext(true)
                         .build();
+                Log.e("Rui", "start to send request");
+
                 FacerecognitionGrpc.FacerecognitionBlockingStub stub = FacerecognitionGrpc.newBlockingStub(mChannel);
                 FaceRecognitionRequest message = FaceRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
                 FaceRecognitionReply reply = stub.offloading(message);
+
+                /*
+                OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
+                OffloadingRequest messae = OffloadingRequest.newBuilder().setMessage("Can I pass?").build();
+                OffloadingReply reply = stub.startService(messae);
+                */
+                Log.e("Rui", "reply: " + reply.getMessage());
                 return reply.getMessage();
             } catch(Exception e) {
                 StringWriter sw = new StringWriter();

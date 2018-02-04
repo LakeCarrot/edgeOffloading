@@ -1,32 +1,20 @@
 package com.example.bohu.edgeoffloading;
 
-import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.VectorEnabledTintResources;
 import android.util.Log;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-import edu.cmu.pocketsphinx.Hypothesis;
-import edu.cmu.pocketsphinx.RecognitionListener;
+import edgeOffloading.OffloadingGrpc;
+
+
 import edu.cmu.pocketsphinx.SpeechRecognizer;
-import edu.cmu.pocketsphinx.SpeechRecognizerSetup;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import speechRecognition.SpeechrecognitionGrpc;
 import speechRecognition.SpeechrecognitionOuterClass;
-
-import static android.widget.Toast.makeText;
 
 public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> {
     private ManagedChannel mChannel;
@@ -51,10 +39,17 @@ public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> {
             mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                     .usePlaintext(true)
                     .build();
+            /*
+            OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
+            OffloadingOuterClass.OffloadingRequest messae = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("Can I pass?").build();
+            OffloadingOuterClass.OffloadingReply reply = stub.startService(messae);
+            */
+
             SpeechrecognitionGrpc.SpeechrecognitionBlockingStub stub = SpeechrecognitionGrpc.newBlockingStub(mChannel);
             SpeechrecognitionOuterClass.SpeechRecognitionRequest message = SpeechrecognitionOuterClass.SpeechRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
             Log.e("Rui", "send message");
             SpeechrecognitionOuterClass.SpeechRecognitionReply reply = stub.offloading(message);
+
             Log.e("Rui", "receive reply" + reply.getMessage());
             return reply.getMessage();
         } catch(Exception e) {

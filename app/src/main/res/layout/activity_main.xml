@@ -12,6 +12,18 @@
         android:orientation="vertical"
         android:padding="16dp" >
 
+        <Button
+            android:id="@+id/remoteGprc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="remote grpc" />
+
+        <Button
+            android:id="@+id/remoteSpeech"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="remote speech recognition" />
+
         <TextView
             android:id="@+id/caption_text"
             android:layout_width="wrap_content"
