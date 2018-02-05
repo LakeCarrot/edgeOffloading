@@ -9,7 +9,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
+import com.google.protobuf.ByteString;
 
 import org.openalpr.OpenALPR;
 import org.openalpr.model.Results;
@@ -19,14 +21,19 @@ import org.opencv.face.FaceRecognizer;
 import org.opencv.face.LBPHFaceRecognizer;
 import org.opencv.imgcodecs.Imgcodecs;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import edgeOffloading.OffloadingGrpc;
@@ -34,8 +41,11 @@ import edgeOffloading.OffloadingOuterClass;
 import faceRecognition.FacerecognitionGrpc;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionRequest;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionReply;
+import fileuploadtest.FileUploadTestGrpc;
+import fileuploadtest.Fileuploadtest;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
 import platerecognition.PlateRecognitionGrpc;
 import platerecognition.Platerecognition;
 
@@ -67,21 +77,26 @@ public class MainActivity extends AppCompatActivity {
 
         // do initialization here for each application
         // TODO: face recognition, need to load model here
+        /*
+        Log.d("Face", "Begin loading!");
         File root = Environment.getExternalStorageDirectory();
         File file = new File(root, "/testFace/faceModel.yml");
         face = LBPHFaceRecognizer.create();
         face.read(file.getAbsolutePath());
+        Log.d("Face", "Finish loading!");
+        */
 
         // plate recognition, load conf file
         ANDROID_DATA_DIR = this.getApplicationInfo().dataDir;
         openAlprConfFile = ANDROID_DATA_DIR + File.separatorChar + "runtime_data" + File.separatorChar + "openalpr.conf";
 
-        faceRecognition();
+        //faceRecognition();
         //new GrpcTask().execute();
         //requestSending("172.28.143.136", 50051);
         //new FaceTask().execute();
         //plateRecognition();
         //new PlateTask().execute();
+        new FileUploadClient().execute();
     }
 
     private void requestSending(String hostIP, int hostPort) {
@@ -215,6 +230,100 @@ public class MainActivity extends AppCompatActivity {
             System.out.println(result);
         }
     }
+
+
+    private class FileUploadClient extends AsyncTask<Void, Void, String> {
+        private ManagedChannel mChannel;
+        private FileUploadTestGrpc.FileUploadTestStub mAsyncStub;
+        private String hostIP;
+        private int hostPort;
+
+        private void init() {
+            mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                    .usePlaintext(true)
+                    .build();
+            mAsyncStub = FileUploadTestGrpc.newStub(mChannel);
+        }
+
+        private void startStream(final String filepath, String filename) {
+            final CountDownLatch finsihLatch = new CountDownLatch(1);
+            StreamObserver<Fileuploadtest.Response> responseObserver = new StreamObserver<Fileuploadtest.Response>() {
+                @Override
+                public void onNext(Fileuploadtest.Response value) {
+
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    finsihLatch.countDown();
+                }
+
+                @Override
+                public void onCompleted() {
+                    finsihLatch.countDown();
+                }
+            };
+            StreamObserver<Fileuploadtest.Request> requestObserver = mAsyncStub.upload(responseObserver);
+            try {
+                File file = new File(filepath);
+                if(file.exists() == false) {
+                    Log.d("File Upload Test", "File that needed to be uploaded doesn't exist");
+                    return;
+                }
+                try {
+                    Log.d("File Upload Test", "Successfully read the data");
+                    BufferedInputStream bInputStream = new BufferedInputStream(new FileInputStream(file));
+                    int bufferSize = 64*1024; // 64 kb per message
+                    byte[] buffer = new byte[bufferSize];
+                    int tmp = 0;
+                    int size = 0;
+                    Log.d("File Upload", "Start to transfer file");
+                    while((tmp = bInputStream.read(buffer)) > 0) {
+                        size += tmp;
+                        ByteString byteString = ByteString.copyFrom(buffer, 0, tmp);
+                        Fileuploadtest.Request req = Fileuploadtest.Request.newBuilder().setName(filename).setData(byteString).build();
+                        //TODO: the offset here may need to adjust
+                        requestObserver.onNext(req);
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } catch (RuntimeException e) {
+                requestObserver.onError(e);
+            }
+            requestObserver.onCompleted();
+        }
+
+        @Override
+        protected String doInBackground(Void... nothing) {
+            try {
+                Log.d("File Upload Test", "enter here!");
+                hostIP = "172.28.143.136";
+                hostPort = 50052;
+                init();
+                File root = Environment.getExternalStorageDirectory();
+                File file = new File(root, "/testFace/test.jpg");
+                Log.d("File Upload Test", "start streaming!");
+                startStream(file.getAbsolutePath(), "test.jpg");
+                return "";
+            } catch(Exception e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                pw.flush();
+                return String.format("Failed... : %n%s", sw);
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            return;
+        }
+    }
+
+
 
     private class PlateTask extends AsyncTask<Void, Void, String> {
         private ManagedChannel mChannel;
