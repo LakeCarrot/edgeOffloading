@@ -36,6 +36,8 @@ import faceRecognition.FacerecognitionOuterClass.FaceRecognitionRequest;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionReply;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import platerecognition.PlateRecognitionGrpc;
+import platerecognition.Platerecognition;
 
 import static org.opencv.core.CvType.CV_32SC1;
 
@@ -48,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String openAlprConfFile;
     private String ANDROID_DATA_DIR;
+    private FaceRecognizer face;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,17 +67,21 @@ public class MainActivity extends AppCompatActivity {
 
         // do initialization here for each application
         // TODO: face recognition, need to load model here
+        File root = Environment.getExternalStorageDirectory();
+        File file = new File(root, "/testFace/faceModel.yml");
+        face = LBPHFaceRecognizer.create();
+        face.read(file.getAbsolutePath());
 
         // plate recognition, load conf file
         ANDROID_DATA_DIR = this.getApplicationInfo().dataDir;
         openAlprConfFile = ANDROID_DATA_DIR + File.separatorChar + "runtime_data" + File.separatorChar + "openalpr.conf";
 
-        //faceRecognition();
+        faceRecognition();
         //new GrpcTask().execute();
         //requestSending("172.28.143.136", 50051);
         //new FaceTask().execute();
-        plateRecognition();
-
+        //plateRecognition();
+        //new PlateTask().execute();
     }
 
     private void requestSending(String hostIP, int hostPort) {
@@ -136,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void faceRecognition() {
+        long begin = System.currentTimeMillis();
         String trainingDir = "/trainFace/";
         /*
         code on IoT part when load data
@@ -146,41 +154,14 @@ public class MainActivity extends AppCompatActivity {
         if(testImage.empty()) {
             Log.d("image", "wrong!!!");
         }
-        //Mat testImage = Imgcodecs.imread("testDir", Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
-        File trainImages = new File(root, trainingDir);
-        FilenameFilter imgFilter = new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                name = name.toLowerCase();
-                return name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png");
-            }
-        };
-        File[] imageFiles =  trainImages.listFiles(imgFilter);
-        List<Mat> images = new ArrayList<>(imageFiles.length);
-        int[] labelsBuf =  new int[imageFiles.length];
-        int counter = 0;
-
-        for(File image : imageFiles) {
-            Mat img = Imgcodecs.imread(image.getAbsolutePath(), Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
-            int label = Integer.parseInt(image.getName().split("\\-")[0]);
-            images.add(img);
-            labelsBuf[counter] = label;
-            counter++;
-        }
-
-        FaceRecognizer face = LBPHFaceRecognizer.create();
-        //ByteBuffer bb = ByteBuffer.allocate(labelsBuf.length * 4);
-        //bb.asIntBuffer().put(labelsBuf);
-
-        //Mat labels = new Mat(imageFiles.length, 1, CV_32SC1, bb);
-        face.train(images, new MatOfInt(labelsBuf));
 
         int[] label = new int[1];
         double[] confidence = new double[1];
         face.predict(testImage, label, confidence);
         int predictedLabel = label[0];
+        long end = System.currentTimeMillis();
 
-        Log.d("face recognition", "Predicted label: " + predictedLabel);
+        Log.d("face recognition", "Predicted label: " + predictedLabel + " Processing time: " + (end - begin) + " ms");
     }
 
     private void plateRecognition() {
@@ -214,6 +195,44 @@ public class MainActivity extends AppCompatActivity {
                 FacerecognitionGrpc.FacerecognitionBlockingStub stub = FacerecognitionGrpc.newBlockingStub(mChannel);
                 FaceRecognitionRequest message = FaceRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
                 FaceRecognitionReply reply = stub.offloading(message);
+                return reply.getMessage();
+            } catch(Exception e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                pw.flush();
+                return String.format("Failed... : %n%s", sw);
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            System.out.println(result);
+        }
+    }
+
+    private class PlateTask extends AsyncTask<Void, Void, String> {
+        private ManagedChannel mChannel;
+        private String hostIP;
+        private int hostPort;
+
+        @Override
+        protected String doInBackground(Void... nothing) {
+            try {
+                // first version use static IP and port
+                hostIP = "172.28.143.136";
+                hostPort = 50052;
+                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                        .usePlaintext(true)
+                        .build();
+                PlateRecognitionGrpc.PlateRecognitionBlockingStub stub = PlateRecognitionGrpc.newBlockingStub(mChannel);
+                Platerecognition.PlateRecognitionRequest message = Platerecognition.PlateRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
+                Platerecognition.PlateRecognitionReply reply = stub.offloading(message);
                 return reply.getMessage();
             } catch(Exception e) {
                 StringWriter sw = new StringWriter();
