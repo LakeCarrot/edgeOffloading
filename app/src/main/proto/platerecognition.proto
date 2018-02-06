@@ -17,11 +17,12 @@ syntax = "proto3";
 package platerecognition;
 
 service PlateRecognition {
-    rpc Offloading (PlateRecognitionRequest) returns (PlateRecognitionReply) {}
+    rpc Offloading (stream PlateRecognitionRequest) returns (PlateRecognitionReply) {}
 }
 
 message PlateRecognitionRequest {
-    string message = 1;
+    string name = 1;
+    bytes data = 2;
 }
 
 message PlateRecognitionReply {

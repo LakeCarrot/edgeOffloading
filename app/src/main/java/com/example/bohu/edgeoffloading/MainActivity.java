@@ -95,8 +95,8 @@ public class MainActivity extends AppCompatActivity {
         //requestSending("172.28.143.136", 50051);
         //new FaceTask().execute();
         //plateRecognition();
-        //new PlateTask().execute();
-        new FileUploadClient().execute();
+        new PlateTask().execute();
+        //new FileUploadClient().execute();
     }
 
     private void requestSending(String hostIP, int hostPort) {
@@ -276,13 +276,10 @@ public class MainActivity extends AppCompatActivity {
                     int bufferSize = 64*1024; // 64 kb per message
                     byte[] buffer = new byte[bufferSize];
                     int tmp = 0;
-                    int size = 0;
                     Log.d("File Upload", "Start to transfer file");
                     while((tmp = bInputStream.read(buffer)) > 0) {
-                        size += tmp;
                         ByteString byteString = ByteString.copyFrom(buffer, 0, tmp);
                         Fileuploadtest.Request req = Fileuploadtest.Request.newBuilder().setName(filename).setData(byteString).build();
-                        //TODO: the offset here may need to adjust
                         requestObserver.onNext(req);
                     }
                 } catch (FileNotFoundException e) {
@@ -319,30 +316,107 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result) {
-            return;
+            try {
+                mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
-
 
 
     private class PlateTask extends AsyncTask<Void, Void, String> {
         private ManagedChannel mChannel;
         private String hostIP;
         private int hostPort;
+        private PlateRecognitionGrpc.PlateRecognitionStub mAsyncStub;
+
+        private void init() {
+            mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                    .usePlaintext(true)
+                    .build();
+            mAsyncStub = PlateRecognitionGrpc.newStub(mChannel);
+        }
+
+        private void startStream(final String filepath, String filename) {
+            final CountDownLatch finsihLatch = new CountDownLatch(1);
+            StreamObserver<Platerecognition.PlateRecognitionReply> responseObserver = new StreamObserver<Platerecognition.PlateRecognitionReply>() {
+                @Override
+                public void onNext(Platerecognition.PlateRecognitionReply value) {
+                    Log.d("Plate Recognition", "in response onNext");
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    finsihLatch.countDown();
+                }
+
+                @Override
+                public void onCompleted() {
+                    Log.d("Plate Recognition", "Finish this request!");
+                    finsihLatch.countDown();
+                }
+            };
+            StreamObserver<Platerecognition.PlateRecognitionRequest> requestObserver = mAsyncStub.offloading(responseObserver);
+            try {
+                File file = new File(filepath);
+                if(file.exists() == false) {
+                    Log.d("Plate Recognition", filepath + " File that needed to be uploaded doesn't exist");
+                    return;
+                }
+                try {
+                    /*
+                    BufferedInputStream bInputStream = new BufferedInputStream(new FileInputStream(file));
+                    int bufferSize = (int) file.length();
+                    byte[] buffer = new byte[bufferSize];
+                    int tmp = 0;
+                    if((tmp = bInputStream.read(buffer)) > 0) {
+                        Log.d("Plate Recognition", "start transferring file with size " + tmp);
+                        ByteString byteString = ByteString.copyFrom(buffer, 0, tmp);
+                        Platerecognition.PlateRecognitionRequest req = Platerecognition.PlateRecognitionRequest.newBuilder().setName(filename).setData(byteString).build();
+                        requestObserver.onNext(req);
+                        Log.d("Plate Recognition", "end of transferring file with size " + tmp);
+                    }
+                    */
+                    Log.d("Plate Recognition", "Successfully read the data");
+                    BufferedInputStream bInputStream = new BufferedInputStream(new FileInputStream(file));
+                    int bufferSize = 64*1024; // 64 kb per message
+                    byte[] buffer = new byte[bufferSize];
+                    int tmp = 0;
+                    Log.d("Plate Recognition", "Start to transfer file");
+                    while((tmp = bInputStream.read(buffer)) > 0) {
+                        ByteString byteString = ByteString.copyFrom(buffer, 0, tmp);
+                        Platerecognition.PlateRecognitionRequest req = Platerecognition.PlateRecognitionRequest.newBuilder().setName(filename).setData(byteString).build();
+                        requestObserver.onNext(req);
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } catch (RuntimeException e) {
+                requestObserver.onError(e);
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            requestObserver.onCompleted();
+        }
 
         @Override
         protected String doInBackground(Void... nothing) {
             try {
-                // first version use static IP and port
+                Log.d("Plate Recognition", "enter here!");
                 hostIP = "172.28.143.136";
                 hostPort = 50052;
-                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
-                        .usePlaintext(true)
-                        .build();
-                PlateRecognitionGrpc.PlateRecognitionBlockingStub stub = PlateRecognitionGrpc.newBlockingStub(mChannel);
-                Platerecognition.PlateRecognitionRequest message = Platerecognition.PlateRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
-                Platerecognition.PlateRecognitionReply reply = stub.offloading(message);
-                return reply.getMessage();
+                init();
+                File root = Environment.getExternalStorageDirectory();
+                File file = new File(root, "/testPlate/1.jpg");
+                Log.d("Plate Recognition", "start streaming!");
+                startStream(file.getAbsolutePath(), "testPlate.jpg");
+                return "";
             } catch(Exception e) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
@@ -359,7 +433,6 @@ public class MainActivity extends AppCompatActivity {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            System.out.println(result);
         }
     }
 }
