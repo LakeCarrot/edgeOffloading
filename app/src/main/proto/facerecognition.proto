@@ -21,7 +21,8 @@ service Facerecognition {
 }
 
 message FaceRecognitionRequest {
-    string message = 1;
+    string name = 1;
+    bytes data = 2;
 }
 
 message FaceRecognitionReply {

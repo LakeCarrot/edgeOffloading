@@ -21,7 +21,8 @@ service PlateRecognition {
 }
 
 message PlateRecognitionRequest {
-    string message = 1;
+    string name = 1;
+    bytes data = 2;
 }
 
 message PlateRecognitionReply {

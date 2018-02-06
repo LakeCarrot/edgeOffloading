@@ -93,10 +93,10 @@ public class MainActivity extends AppCompatActivity {
         //faceRecognition();
         //new GrpcTask().execute();
         //requestSending("172.28.143.136", 50051);
-        //new FaceTask().execute();
+        new FaceTask().execute();
         //plateRecognition();
         //new PlateTask().execute();
-        new FileUploadClient().execute();
+        //new FileUploadClient().execute();
     }
 
     private void requestSending(String hostIP, int hostPort) {
@@ -197,6 +197,41 @@ public class MainActivity extends AppCompatActivity {
         private ManagedChannel mChannel;
         private String hostIP;
         private int hostPort;
+        private FacerecognitionGrpc.FacerecognitionBlockingStub stub;
+
+        private void init() {
+            mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                    .usePlaintext(true)
+                    .build();
+            stub = FacerecognitionGrpc.newBlockingStub(mChannel);
+        }
+
+        private String issueRequest(String filepath, String name) {
+            File file = new File(filepath);
+            if(file.exists() == false) {
+                Log.d("Face Recognition", "File that needed to be uploaded doesn't exist");
+                return "";
+            }
+            try {
+                Log.d("Face Recognition", "Successfully read the data");
+                BufferedInputStream bInputStream = new BufferedInputStream(new FileInputStream(file));
+                int bufferSize = (int) file.length(); // 64 kb per message
+                byte[] buffer = new byte[bufferSize];
+                int tmp = 0;
+                Log.d("Face Recognition", "Start to transfer file");
+                if((tmp = bInputStream.read(buffer)) > 0) {
+                    ByteString byteString = ByteString.copyFrom(buffer, 0, tmp);
+                    FaceRecognitionRequest message = FaceRecognitionRequest.newBuilder().setName(name).setData(byteString).build();
+                    FaceRecognitionReply reply = stub.offloading(message);
+                    return reply.getMessage();
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return "";
+        }
 
         @Override
         protected String doInBackground(Void... nothing) {
@@ -204,13 +239,10 @@ public class MainActivity extends AppCompatActivity {
                 // first version use static IP and port
                 hostIP = "172.28.143.136";
                 hostPort = 50052;
-                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
-                        .usePlaintext(true)
-                        .build();
-                FacerecognitionGrpc.FacerecognitionBlockingStub stub = FacerecognitionGrpc.newBlockingStub(mChannel);
-                FaceRecognitionRequest message = FaceRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
-                FaceRecognitionReply reply = stub.offloading(message);
-                return reply.getMessage();
+                init();
+                File root = Environment.getExternalStorageDirectory();
+                File file = new File(root, "/testFace/1.jpg");
+                return issueRequest(file.getAbsolutePath(), "1.jpg");
             } catch(Exception e) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
@@ -329,20 +361,51 @@ public class MainActivity extends AppCompatActivity {
         private ManagedChannel mChannel;
         private String hostIP;
         private int hostPort;
+        PlateRecognitionGrpc.PlateRecognitionBlockingStub stub;
 
+        private void init() {
+            mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                    .usePlaintext(true)
+                    .build();
+            stub = PlateRecognitionGrpc.newBlockingStub(mChannel);
+        }
+
+        private String issueRequest(String filepath, String name) {
+            File file = new File(filepath);
+            if(file.exists() == false) {
+                Log.d("File Upload Test", "File that needed to be uploaded doesn't exist");
+                return "";
+            }
+            try {
+                Log.d("File Upload Test", "Successfully read the data");
+                BufferedInputStream bInputStream = new BufferedInputStream(new FileInputStream(file));
+                int bufferSize = (int) file.length(); // 64 kb per message
+                byte[] buffer = new byte[bufferSize];
+                int tmp = 0;
+                Log.d("File Upload", "Start to transfer file");
+                if((tmp = bInputStream.read(buffer)) > 0) {
+                    ByteString byteString = ByteString.copyFrom(buffer, 0, tmp);
+                    Platerecognition.PlateRecognitionRequest message = Platerecognition.PlateRecognitionRequest.newBuilder().setName("test.jpg").setData(byteString).build();
+                    Platerecognition.PlateRecognitionReply reply = stub.offloading(message);
+                    return reply.getMessage();
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return "";
+        }
         @Override
         protected String doInBackground(Void... nothing) {
             try {
                 // first version use static IP and port
                 hostIP = "172.28.143.136";
                 hostPort = 50052;
-                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
-                        .usePlaintext(true)
-                        .build();
-                PlateRecognitionGrpc.PlateRecognitionBlockingStub stub = PlateRecognitionGrpc.newBlockingStub(mChannel);
-                Platerecognition.PlateRecognitionRequest message = Platerecognition.PlateRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
-                Platerecognition.PlateRecognitionReply reply = stub.offloading(message);
-                return reply.getMessage();
+                init();
+                File root = Environment.getExternalStorageDirectory();
+                File file = new File(root, "/testPlate/test.jpg");
+                return issueRequest(file.getAbsolutePath(), "test.jpg");
             } catch(Exception e) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
