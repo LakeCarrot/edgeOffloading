@@ -202,7 +202,8 @@ public class MainActivity extends AppCompatActivity {
                         .usePlaintext(true)
                         .build();
                 OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
-                OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("Who are you?").build();
+                OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("ruili92/speech").build();
+                message.getMessage();
                 OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
                 return reply.getMessage();
             } catch(Exception e) {
