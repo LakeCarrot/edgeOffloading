@@ -21,17 +21,27 @@ import org.opencv.face.FaceRecognizer;
 import org.opencv.face.LBPHFaceRecognizer;
 import org.opencv.imgcodecs.Imgcodecs;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import edgeOffloading.OffloadingGrpc;
@@ -81,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
 
     private SpeechRecognizer recognizer;
     private HashMap<String, Integer> captions;
+    private String destination;
+    private static int APPPORT = 50053;  // tcp port which the offloading app will listen to
     /**
      * Speech-related variables (end)
      */
@@ -116,18 +128,20 @@ public class MainActivity extends AppCompatActivity {
         Button button=(Button) findViewById(R.id.remoteGprc);
         button.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
-                Log.e("Rui","remote grpc.");
-                new GrpcTask().execute();
-                Log.e("Rui","remote speech recognition.");
-                new RemoteSpeechRecognition().execute();
+                ExecutorService executor = Executors.newCachedThreadPool();
+                int portInit = 50054;
+                for (int i = 0; i < 7; i++) {
+                    executor.execute(new MultiSender(portInit + i));
+                }
             }
         });
 
         Button button2=(Button) findViewById(R.id.remoteSpeech);
         button2.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
-                Log.e("Rui","remote speech recognition.");
-                new RemoteSpeechRecognition().execute();
+                Log.e("Rui","find a destination");
+                new ScheduleTask().execute();
+                APPPORT++;
             }
         });
         //new LocalSpeechRecognition(this).execute();
@@ -187,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
         Log.e("Rui","overall processing time " + (overallTimeEnd - overallTimeStart));
     }
 
-    private class GrpcTask extends AsyncTask<Void, Void, String> {
+    private class ScheduleTask extends AsyncTask<Void, Void, String> {
         private ManagedChannel mChannel;
         private String hostIP;
         private int hostPort;
@@ -202,16 +216,12 @@ public class MainActivity extends AppCompatActivity {
                         .usePlaintext(true)
                         .build();
                 OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
-                OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("ruili92/speech").build();
-                message.getMessage();
+                OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("first:ruili92/speech").build();
                 OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
-                return reply.getMessage();
+                destination = reply.getMessage();
+                return destination;
             } catch(Exception e) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                e.printStackTrace(pw);
-                pw.flush();
-                return String.format("Failed... : %n%s", sw);
+                return e.getMessage();
             }
         }
 
@@ -222,54 +232,11 @@ public class MainActivity extends AppCompatActivity {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            System.out.println(result);
+            Log.e("Rui","destination: " + destination);
+            // prepare port and docker image on destination
+            new PrepareDocker(destination, APPPORT, "ruili92/speech").execute();
         }
     }
 
-    private class FaceTask extends AsyncTask<Void, Void, String> {
-        private ManagedChannel mChannel;
-        private String hostIP;
-        private int hostPort;
 
-        @Override
-        protected String doInBackground(Void... nothing) {
-            try {
-                // first version use static IP and port
-                hostIP = "172.28.142.176";
-                hostPort = 50052;
-                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
-                        .usePlaintext(true)
-                        .build();
-                Log.e("Rui", "start to send request");
-
-                FacerecognitionGrpc.FacerecognitionBlockingStub stub = FacerecognitionGrpc.newBlockingStub(mChannel);
-                FaceRecognitionRequest message = FaceRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
-                FaceRecognitionReply reply = stub.offloading(message);
-
-                /*
-                OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
-                OffloadingRequest messae = OffloadingRequest.newBuilder().setMessage("Can I pass?").build();
-                OffloadingReply reply = stub.startService(messae);
-                */
-                Log.e("Rui", "reply: " + reply.getMessage());
-                return reply.getMessage();
-            } catch(Exception e) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                e.printStackTrace(pw);
-                pw.flush();
-                return String.format("Failed... : %n%s", sw);
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            try {
-                mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            System.out.println(result);
-        }
-    }
 }

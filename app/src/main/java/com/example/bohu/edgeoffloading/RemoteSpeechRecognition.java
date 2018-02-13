@@ -16,37 +16,42 @@ import io.grpc.ManagedChannelBuilder;
 import speechRecognition.SpeechrecognitionGrpc;
 import speechRecognition.SpeechrecognitionOuterClass;
 
-public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> {
+public class RemoteSpeechRecognition {//} extends AsyncTask<Void, Void, String> {
     private ManagedChannel mChannel;
     private String hostIP;
     private int hostPort;
-    private SpeechRecognizer recognizer;
-    private HashMap<String, Integer> captions;
-    private static final String KEYPHRASE = "oh mighty computer";
-    private static final String KWS_SEARCH = "wakeup";
-    private static final String FORECAST_SEARCH = "forecast";
-    private static final String DIGITS_SEARCH = "digits";
-    private static final String PHONE_SEARCH = "phones";
-    private static final String MENU_SEARCH = "menu";
 
+    public RemoteSpeechRecognition(String hostIP, int hostPort) {
+        this.hostIP = hostIP;
+        this.hostPort = hostPort;
+        Log.e("Rui","initialize RemoteSpeechRecognition");
+        remoteCall();
+    }
+
+    private void remoteCall() {
+        Log.e("Rui","come here");
+        mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
+                .usePlaintext(true)
+                .build();
+        SpeechrecognitionGrpc.SpeechrecognitionBlockingStub stub = SpeechrecognitionGrpc.newBlockingStub(mChannel);
+        SpeechrecognitionOuterClass.SpeechRecognitionRequest message = SpeechrecognitionOuterClass.SpeechRecognitionRequest.newBuilder().setMessage("ruili92/speech").build();
+        Log.e("Rui", "send message to port " + hostPort);
+        SpeechrecognitionOuterClass.SpeechRecognitionReply reply = stub.offloading(message);
+
+        Log.e("Rui", "receive reply" + reply.getMessage());
+    }
+
+    /*
     @Override
     protected String doInBackground(Void... params) {
+        Log.e("Rui","initialize doInBackground");
         try {
-            // first version use static IP and port
-            hostIP = "172.28.142.176";
-            hostPort = 50052;
-            Log.e("Rui", "try to connect");
+            Log.e("Rui","come here");
             mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                     .usePlaintext(true)
                     .build();
-            /*
-            OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
-            OffloadingOuterClass.OffloadingRequest messae = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("Can I pass?").build();
-            OffloadingOuterClass.OffloadingReply reply = stub.startService(messae);
-            */
-
             SpeechrecognitionGrpc.SpeechrecognitionBlockingStub stub = SpeechrecognitionGrpc.newBlockingStub(mChannel);
-            SpeechrecognitionOuterClass.SpeechRecognitionRequest message = SpeechrecognitionOuterClass.SpeechRecognitionRequest.newBuilder().setMessage("Can I pass?").build();
+            SpeechrecognitionOuterClass.SpeechRecognitionRequest message = SpeechrecognitionOuterClass.SpeechRecognitionRequest.newBuilder().setMessage("ruili92/speech").build();
             Log.e("Rui", "send message");
             SpeechrecognitionOuterClass.SpeechRecognitionReply reply = stub.offloading(message);
 
@@ -69,4 +74,5 @@ public class RemoteSpeechRecognition extends AsyncTask<Void, Void, String> {
             Thread.currentThread().interrupt();
         }
     }
+    */
 }
