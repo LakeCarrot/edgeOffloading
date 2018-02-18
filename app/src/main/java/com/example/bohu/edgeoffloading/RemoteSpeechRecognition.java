@@ -24,21 +24,27 @@ public class RemoteSpeechRecognition {//} extends AsyncTask<Void, Void, String> 
     public RemoteSpeechRecognition(String hostIP, int hostPort) {
         this.hostIP = hostIP;
         this.hostPort = hostPort;
-        Log.e("Rui","initialize RemoteSpeechRecognition");
         remoteCall();
     }
 
     private void remoteCall() {
-        Log.e("Rui","come here");
+        Log.e("Rui", "connect to " + hostIP + " at " + hostPort);
         mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                 .usePlaintext(true)
                 .build();
+        try {
+            Thread.sleep(10000);
+        } catch (Exception e) {
+            System.out.print(e);
+        }
         SpeechrecognitionGrpc.SpeechrecognitionBlockingStub stub = SpeechrecognitionGrpc.newBlockingStub(mChannel);
         SpeechrecognitionOuterClass.SpeechRecognitionRequest message = SpeechrecognitionOuterClass.SpeechRecognitionRequest.newBuilder().setMessage("ruili92/speech").build();
-        Log.e("Rui", "send message to port " + hostPort);
+        Log.e("Rui", "start time: " + System.currentTimeMillis());
         SpeechrecognitionOuterClass.SpeechRecognitionReply reply = stub.offloading(message);
 
-        Log.e("Rui", "receive reply" + reply.getMessage());
+        Log.e("Rui", "stop time: " + System.currentTimeMillis());
+        //new cleanupDocker(hostIP, "speech" + Integer.toString(hostPort)).execute();
+        Log.e("Rui", "done");
     }
 
     /*

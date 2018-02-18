@@ -5,41 +5,34 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import edgeOffloading.OffloadingGrpc;
 import edgeOffloading.OffloadingOuterClass;
-import edgeOffloading.OffloadingOuterClass.OffloadingRequest;
-import edgeOffloading.OffloadingOuterClass.OffloadingReply;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 
-public class PrepareDocker extends AsyncTask<Void, Void, String> {
+public class cleanupDocker extends AsyncTask<Void, Void, String> {
     private ManagedChannel mChannel;
     private String hostIP;
-    private int appPort;
-    private String appId;
+    private String containerID;
 
-    public PrepareDocker(String hostIP, int appPort, String appId) {
+    public cleanupDocker(String hostIP, String containerID) {
         this.hostIP = hostIP;
-        this.appPort = appPort;
-        this.appId = appId;
+        this.containerID = containerID;
     }
 
     @Override
     protected String doInBackground(Void... params) {
         try {
-            mChannel = ManagedChannelBuilder.forAddress(hostIP, 60051)
+            mChannel = ManagedChannelBuilder.forAddress(hostIP, 60052)
                     .usePlaintext(true)
                     .build();
             OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
-            Log.e("Rui","will connect app port: " + appPort);
-            String message = Integer.toString(appPort) + ":" + appId;
-            OffloadingOuterClass.OffloadingRequest messae = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage(message).build();
+            OffloadingOuterClass.OffloadingRequest messae = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage(containerID).build();
             OffloadingOuterClass.OffloadingReply reply = stub.startService(messae);
 
-            Log.e("Rui", "PrepareDocker receive reply" + reply.getMessage());
+            Log.e("Rui", "cleanupDocker receive reply" + reply.getMessage());
             return reply.getMessage();
         } catch(Exception e) {
             StringWriter sw = new StringWriter();
@@ -57,7 +50,6 @@ public class PrepareDocker extends AsyncTask<Void, Void, String> {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        Log.e("Rui","[PrepareDocker] hostIP: " + hostIP + ", appPort: " + appPort);
-        new RemoteSpeechRecognition(hostIP, appPort);
     }
+
 }

@@ -74,28 +74,10 @@ public class MainActivity extends AppCompatActivity {
     static{ System.loadLibrary("opencv_java3"); }
 
     /**
-     * Speech-related variables (start)
+     * Scheduler-related variables
      */
-    /* Named searches allow to quickly reconfigure the decoder */
-    private static final String KWS_SEARCH = "wakeup";
-    private static final String FORECAST_SEARCH = "forecast";
-    private static final String DIGITS_SEARCH = "digits";
-    private static final String PHONE_SEARCH = "phones";
-    private static final String MENU_SEARCH = "menu";
-
-    /* Keyword we are looking for to activate menu */
-    private static final String KEYPHRASE = "oh mighty computer";
-
-    /* Used to handle permission request */
-    private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
-
-    private SpeechRecognizer recognizer;
-    private HashMap<String, Integer> captions;
     private String destination;
     private static int APPPORT = 50053;  // tcp port which the offloading app will listen to
-    /**
-     * Speech-related variables (end)
-     */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,10 +110,12 @@ public class MainActivity extends AppCompatActivity {
         Button button=(Button) findViewById(R.id.remoteGprc);
         button.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
+                int numConcurrentApps = 2;
                 ExecutorService executor = Executors.newCachedThreadPool();
-                int portInit = 50054;
-                for (int i = 0; i < 7; i++) {
-                    executor.execute(new MultiSender(portInit + i));
+                for (int i = 0; i < numConcurrentApps; i++) {
+                    // the app will always send offloading requests to slave1
+                    executor.execute(new MultiSender("172.28.142.176", APPPORT));
+                    APPPORT++;
                 }
             }
         });
@@ -140,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
         button2.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 Log.e("Rui","find a destination");
-                new ScheduleTask().execute();
+                new RemoteSpeechRecognition("172.28.142.176", 50053);
                 APPPORT++;
             }
         });
@@ -199,43 +183,6 @@ public class MainActivity extends AppCompatActivity {
         }
         long overallTimeEnd = System.currentTimeMillis();
         Log.e("Rui","overall processing time " + (overallTimeEnd - overallTimeStart));
-    }
-
-    private class ScheduleTask extends AsyncTask<Void, Void, String> {
-        private ManagedChannel mChannel;
-        private String hostIP;
-        private int hostPort;
-
-        @Override
-        protected String doInBackground(Void... nothing) {
-            try {
-                // first version use static IP and port
-                hostIP = "172.28.142.176";
-                hostPort = 50051;
-                mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
-                        .usePlaintext(true)
-                        .build();
-                OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
-                OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("first:ruili92/speech").build();
-                OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
-                destination = reply.getMessage();
-                return destination;
-            } catch(Exception e) {
-                return e.getMessage();
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            try {
-                mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            Log.e("Rui","destination: " + destination);
-            // prepare port and docker image on destination
-            new PrepareDocker(destination, APPPORT, "ruili92/speech").execute();
-        }
     }
 
 
