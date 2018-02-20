@@ -51,6 +51,7 @@ import faceRecognition.FacerecognitionOuterClass.FaceRecognitionRequest;
 import faceRecognition.FacerecognitionOuterClass.FaceRecognitionReply;
 import edgeOffloading.OffloadingOuterClass.OffloadingRequest;
 import edgeOffloading.OffloadingOuterClass.OffloadingReply;
+import io.grpc.stub.StreamObserver;
 import speechRecognition.SpeechrecognitionGrpc;
 import speechRecognition.SpeechrecognitionOuterClass.SpeechRecognitionRequest;
 import speechRecognition.SpeechrecognitionOuterClass.SpeechRecognitionReply;
@@ -107,25 +108,48 @@ public class MainActivity extends AppCompatActivity {
         /**
          * Face recognition (end)
          */
+        /*
         Button button=(Button) findViewById(R.id.remoteGprc);
         button.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
-                int numConcurrentApps = 2;
+                int numConcurrentApps = 6;
                 ExecutorService executor = Executors.newCachedThreadPool();
                 for (int i = 0; i < numConcurrentApps; i++) {
                     // the app will always send offloading requests to slave1
                     executor.execute(new MultiSender("172.28.142.176", APPPORT));
+
+                    try {
+                        Thread.sleep(5000);
+                    } catch (Exception e) {
+                        new Exception().printStackTrace();
+                    }
+
+
                     APPPORT++;
                 }
+            }
+        });
+        */
+        Button button=(Button) findViewById(R.id.remoteGprc);
+        button.setOnClickListener(new View.OnClickListener(){
+            ExecutorService executor = Executors.newCachedThreadPool();
+            public void onClick(View v){
+                // slave1
+                executor.execute(new MultiSender("172.28.142.176", 50052));
+                // master
+                executor.execute(new MultiSender("172.28.143.136", 50052));
+                // slave2
+                executor.execute(new MultiSender("172.28.140.65", 50052));
+                // slave3
+                executor.execute(new MultiSender("172.28.142.226", 50052));
             }
         });
 
         Button button2=(Button) findViewById(R.id.remoteSpeech);
         button2.setOnClickListener(new View.OnClickListener(){
+            ExecutorService executor = Executors.newCachedThreadPool();
             public void onClick(View v){
-                Log.e("Rui","find a destination");
-                new RemoteSpeechRecognition("172.28.142.176", 50053);
-                APPPORT++;
+                executor.execute(new MultiSender("172.28.142.176", 50052));
             }
         });
         //new LocalSpeechRecognition(this).execute();

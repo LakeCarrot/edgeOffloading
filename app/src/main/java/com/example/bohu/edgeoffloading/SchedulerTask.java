@@ -48,6 +48,6 @@ public class SchedulerTask extends AsyncTask<Void, Void, String> {
         }
         Log.e("Rui","destination: " + destination);
         // prepare port and docker image on destination
-        new PrepareDocker(destination, appPort, "ruili92/speech").execute();
+        new PrepareDocker(destination, appPort, "ruili92/speech").run();
     }
 }

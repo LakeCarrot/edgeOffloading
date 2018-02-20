@@ -15,7 +15,7 @@ import edgeOffloading.OffloadingOuterClass;
 import edgeOffloading.OffloadingOuterClass.OffloadingRequest;
 import edgeOffloading.OffloadingOuterClass.OffloadingReply;
 
-public class PrepareDocker extends AsyncTask<Void, Void, String> {
+public class PrepareDocker {
     private ManagedChannel mChannel;
     private String hostIP;
     private int appPort;
@@ -27,8 +27,7 @@ public class PrepareDocker extends AsyncTask<Void, Void, String> {
         this.appId = appId;
     }
 
-    @Override
-    protected String doInBackground(Void... params) {
+    protected void run() {
         try {
             mChannel = ManagedChannelBuilder.forAddress(hostIP, 60051)
                     .usePlaintext(true)
@@ -40,24 +39,22 @@ public class PrepareDocker extends AsyncTask<Void, Void, String> {
             OffloadingOuterClass.OffloadingReply reply = stub.startService(messae);
 
             Log.e("Rui", "PrepareDocker receive reply" + reply.getMessage());
-            return reply.getMessage();
         } catch(Exception e) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             pw.flush();
-            return String.format("Failed... : %n%s", sw);
         }
-    }
-
-    @Override
-    protected void onPostExecute(String result) {
         try {
             mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
         Log.e("Rui","[PrepareDocker] hostIP: " + hostIP + ", appPort: " + appPort);
-        new RemoteSpeechRecognition(hostIP, appPort);
+    }
+
+    protected void onPostExecute(String result) {
+
+        //new RemoteSpeechRecognition(hostIP, appPort);
     }
 }
