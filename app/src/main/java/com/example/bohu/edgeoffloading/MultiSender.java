@@ -16,14 +16,13 @@ public class MultiSender implements Runnable {
     String destination;
     private ManagedChannel mChannel;
 
-    public MultiSender (String ip, int port) {
+    public MultiSender(String ip, int port) {
         this.nearestIP = ip;
         this.appPort = port;
     }
 
     @Override
     public void run() {
-
         try {
             //Log.e("Rui", "try to find destination");
             // first version use static IP and port
@@ -35,59 +34,12 @@ public class MultiSender implements Runnable {
             OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("speech").build();
             OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
             destination = reply.getMessage();
+            mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
 
         } catch (Exception e) {
             new Exception().printStackTrace();
         }
-        try {
-            mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        new PrepareDocker(destination, appPort, "ruili92/speech").run();
+        //new PrepareDocker(destination, appPort, "ruili92/speech").run();
         new RemoteSpeechRecognition(destination, appPort);
-    }
-
-    private class SchedulerTask extends AsyncTask<Void, Void, String> {
-        private ManagedChannel mChannel;
-        private String hostIP;
-        private int appPort;
-
-        public SchedulerTask(String ip, int port) {
-            this.hostIP = ip;
-            this.appPort = port;
-        }
-
-        @Override
-        protected String doInBackground(Void... nothing) {
-            try {
-                // first version use static IP and port
-                int schedulerPort = 50051;
-                mChannel = ManagedChannelBuilder.forAddress(hostIP, schedulerPort)
-                        .usePlaintext(true)
-                        .build();
-                OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
-                OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("first:ruili92/speech").build();
-                OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
-                destination = reply.getMessage();
-                return destination;
-            } catch (Exception e) {
-                return e.getMessage();
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            try {
-                mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            Log.e("Rui", "destination: " + destination);
-            // prepare port and docker image on destination
-            new PrepareDocker(destination, appPort, "ruili92/speech").run();
-            Log.e("Rui", "*******************************************************");
-            new RemoteSpeechRecognition(destination, appPort);
-        }
     }
 }
