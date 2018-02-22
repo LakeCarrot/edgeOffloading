@@ -31,8 +31,22 @@ public class RemoteSpeechRecognition {//} extends AsyncTask<Void, Void, String> 
         }
     }
 
+    public String hostTranslation(String host) {
+        String hostName = "unknown";
+        if (host.equals("172.28.142.176"))
+            hostName = "slave1";
+        else if (host.equals("172.28.140.65"))
+            hostName = "slave2";
+        else if (host.equals("172.28.142.226"))
+            hostName = "slave3";
+        else if (host.equals("172.28.136.3"))
+            hostName = "master";
+
+        return hostName;
+    }
+
     private void remoteCall() throws Exception {
-        Log.e("Rui", "connect to " + hostIP + " at " + hostPort);
+        Log.e("Rui", "connect to " + hostTranslation(hostIP) + " at " + hostPort);
         Thread.sleep(10000);
         mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                 .usePlaintext(true)

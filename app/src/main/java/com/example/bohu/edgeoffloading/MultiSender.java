@@ -26,6 +26,7 @@ public class MultiSender implements Runnable {
         try {
             //Log.e("Rui", "try to find destination");
             // first version use static IP and port
+
             int schedulerPort = 50051;
             mChannel = ManagedChannelBuilder.forAddress(nearestIP, schedulerPort)
                     .usePlaintext(true)

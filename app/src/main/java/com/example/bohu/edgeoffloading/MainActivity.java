@@ -136,16 +136,16 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v){
                 // slave1
                 executor.execute(new DirectSpeech("172.28.142.176", 50052));
-                executor.execute(new DirectSpeech("172.28.142.176", 50052));
+                //executor.execute(new DirectSpeech("172.28.142.176", 50052));
                 // master
-                executor.execute(new DirectSpeech("172.28.143.136", 50052));
-                executor.execute(new DirectSpeech("172.28.143.136", 50052));
+                executor.execute(new DirectSpeech("172.28.136.3", 50052));
+                //executor.execute(new DirectSpeech("172.28.136.3", 50052));
                 // slave2
                 executor.execute(new DirectSpeech("172.28.140.65", 50052));
-                executor.execute(new DirectSpeech("172.28.140.65", 50052));
+                //executor.execute(new DirectSpeech("172.28.140.65", 50052));
                 // slave3
                 executor.execute(new DirectSpeech("172.28.142.226", 50052));
-                executor.execute(new DirectSpeech("172.28.142.226", 50052));
+                //executor.execute(new DirectSpeech("172.28.142.226", 50052));
             }
         });
 
