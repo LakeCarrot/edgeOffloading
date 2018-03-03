@@ -24,16 +24,15 @@ public class MultiSender implements Runnable {
     @Override
     public void run() {
         try {
-            //Log.e("Rui", "try to find destination");
-            // first version use static IP and port
-
             int schedulerPort = 50051;
             mChannel = ManagedChannelBuilder.forAddress(nearestIP, schedulerPort)
                     .usePlaintext(true)
                     .build();
             OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
             OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage("speech").build();
+            Log.e("Rui", "start scheduling at " + System.currentTimeMillis());
             OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
+            Log.e("Rui", "stop scheduling at " + System.currentTimeMillis());
             destination = reply.getMessage();
             mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
 
@@ -41,6 +40,6 @@ public class MultiSender implements Runnable {
             new Exception().printStackTrace();
         }
         //new PrepareDocker(destination, appPort, "ruili92/speech").run();
-        new RemoteSpeechRecognition(destination, appPort);
+        //new RemoteSpeechRecognition(destination, appPort);
     }
 }

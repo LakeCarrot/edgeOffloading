@@ -16,13 +16,55 @@
             android:id="@+id/remoteGprc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="remote grpc" />
+            android:text="speech@scheduler" />
 
         <Button
-            android:id="@+id/remoteSpeech"
+            android:id="@+id/speech_slave1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="remote speech recognition" />
+            android:text="speech@slave1" />
+
+        <Button
+            android:id="@+id/speech_slave2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="speech@slave2" />
+
+        <Button
+            android:id="@+id/speech_slave3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="speech@slave3" />
+
+        <Button
+            android:id="@+id/speech_master"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="speech@master" />
+
+        <Button
+            android:id="@+id/ocr_slave1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ocr@slave1" />
+
+        <Button
+            android:id="@+id/ocr_slave2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ocr@slave2" />
+
+        <Button
+            android:id="@+id/ocr_slave3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ocr@slave3" />
+
+        <Button
+            android:id="@+id/ocr_master"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ocr@master" />
 
         <TextView
             android:id="@+id/caption_text"

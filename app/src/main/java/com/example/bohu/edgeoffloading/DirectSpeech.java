@@ -1,5 +1,7 @@
 package com.example.bohu.edgeoffloading;
 
+import android.util.Log;
+
 import io.grpc.ManagedChannel;
 
 public class DirectSpeech implements Runnable {

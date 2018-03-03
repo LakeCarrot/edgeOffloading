@@ -1,31 +1,24 @@
 package com.example.bohu.edgeoffloading;
 
-import android.os.AsyncTask;
 import android.util.Log;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Random;
+
 import java.util.concurrent.TimeUnit;
 
 import edgeOffloading.OffloadingGrpc;
-
-
-import edu.cmu.pocketsphinx.SpeechRecognizer;
+import edgeOffloading.OffloadingOuterClass;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import speechRecognition.SpeechrecognitionGrpc;
 import speechRecognition.SpeechrecognitionOuterClass;
 
-public class RemoteSpeechRecognition {//} extends AsyncTask<Void, Void, String> {
+public class RemoteOCR {//} extends AsyncTask<Void, Void, String> {
     private ManagedChannel mChannel;
     private String hostIP;
     private int hostPort;
 
-    public RemoteSpeechRecognition(String hostIP, int hostPort) {
+    public RemoteOCR(String hostIP, int hostPort) {
         this.hostIP = hostIP;
         this.hostPort = hostPort;
-        Random rand = new Random();
         try {
             remoteCall();
         } catch (Exception e) {
@@ -52,13 +45,13 @@ public class RemoteSpeechRecognition {//} extends AsyncTask<Void, Void, String> 
         mChannel = ManagedChannelBuilder.forAddress(hostIP, hostPort)
                 .usePlaintext(true)
                 .build();
-        SpeechrecognitionGrpc.SpeechrecognitionBlockingStub stub = SpeechrecognitionGrpc.newBlockingStub(mChannel);
-        SpeechrecognitionOuterClass.SpeechRecognitionRequest message = SpeechrecognitionOuterClass.SpeechRecognitionRequest.newBuilder().setMessage(hostIP).build();
-        while (true) {
-            SpeechrecognitionOuterClass.SpeechRecognitionReply reply = stub.offloading(message);
-            Log.e("Rui", "stopped unintentionally. Launch again!!");
-        }
-        //new cleanupDocker(hostIP, "speech" + Integer.toString(hostPort)).execute();
-        //Log.e("Rui", "done");
+        OffloadingGrpc.OffloadingBlockingStub stub = OffloadingGrpc.newBlockingStub(mChannel);
+        OffloadingOuterClass.OffloadingRequest message = OffloadingOuterClass.OffloadingRequest.newBuilder().setMessage(hostIP).build();
+        OffloadingOuterClass.OffloadingReply reply = stub.startService(message);
+        Log.e("Rui", "reply: " + reply.getMessage());
+        mChannel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
+
+        Log.e("Rui", "stop time: " + System.currentTimeMillis());
+        Log.e("Rui", "done");
     }
 }
