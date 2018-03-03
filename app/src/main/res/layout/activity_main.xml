@@ -6,13 +6,115 @@
     android:layout_height="match_parent"
     tools:context="com.example.bohu.edgeoffloading.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
+    <Button
+        android:id="@+id/newFace"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="New Face"
+        tools:layout_constraintTop_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintBottom_creator="1"
+        android:layout_marginStart="25dp"
+        app:layout_constraintBottom_toBottomOf="@+id/faceBack"
+        android:layout_marginEnd="16dp"
         app:layout_constraintRight_toRightOf="parent"
+        tools:layout_constraintLeft_creator="1"
+        app:layout_constraintTop_toTopOf="@+id/faceBack"
+        app:layout_constraintLeft_toRightOf="@+id/faceBack" />
+
+    <Button
+        android:id="@+id/newPlate"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:text="New Plate"
+        tools:layout_constraintTop_creator="1"
+        tools:layout_constraintRight_creator="1"
+        app:layout_constraintRight_toRightOf="@+id/newFace"
+        android:layout_marginTop="7dp"
+        app:layout_constraintTop_toBottomOf="@+id/newFace"
+        tools:layout_constraintLeft_creator="1"
+        app:layout_constraintLeft_toLeftOf="@+id/newFace" />
+
+    <Button
+        android:id="@+id/newSpeech"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:layout_marginTop="83dp"
+        android:text="New Speech"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="@+id/newFace"
+        app:layout_constraintRight_toRightOf="@+id/newFace"
+        app:layout_constraintTop_toBottomOf="@+id/newFace"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintTop_creator="1" />
+
+    <Button
+        android:id="@+id/newOcr"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:layout_marginTop="152dp"
+        android:text="New OCR"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="@+id/newFace"
+        app:layout_constraintRight_toRightOf="@+id/newFace"
+        app:layout_constraintTop_toBottomOf="@+id/newFace"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintTop_creator="1" />
+
+    <Button
+        android:id="@+id/plateBack"
+        android:layout_width="147dp"
+        android:layout_height="0dp"
+        android:text="Plate Back"
+        tools:layout_constraintTop_creator="1"
+        tools:layout_constraintBottom_creator="1"
+        android:layout_marginStart="25dp"
+        app:layout_constraintBottom_toBottomOf="@+id/newPlate"
+        tools:layout_constraintLeft_creator="1"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/newPlate" />
+
+    <Button
+        android:id="@+id/faceBack"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:text="Face Back"
+        tools:layout_constraintTop_creator="1"
+        tools:layout_constraintRight_creator="1"
+        app:layout_constraintRight_toRightOf="@+id/plateBack"
+        android:layout_marginTop="31dp"
+        tools:layout_constraintLeft_creator="1"
+        app:layout_constraintLeft_toLeftOf="@+id/plateBack"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/ocrBack"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:layout_marginTop="246dp"
+        android:text="OCR Back"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="@+id/plateBack"
+        app:layout_constraintRight_toRightOf="@+id/plateBack"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintTop_creator="1" />
+
+    <Button
+        android:id="@+id/speechBack"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:layout_marginTop="176dp"
+        android:text="Speech Back"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="@+id/plateBack"
+        app:layout_constraintRight_toRightOf="@+id/plateBack"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintTop_creator="1" />
 
 </android.support.constraint.ConstraintLayout>

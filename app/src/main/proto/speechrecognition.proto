@@ -14,16 +14,16 @@
 // limitations under the License.
 syntax = "proto3";
 
-package edgeOffloading;
+package speechRecognition;
 
-service Offloading {
-    rpc startService (OffloadingRequest) returns (OffloadingReply) {}
+service Speechrecognition {
+    rpc Offloading (SpeechRecognitionRequest) returns (SpeechRecognitionReply) {}
 }
 
-message OffloadingRequest {
+message SpeechRecognitionRequest {
     string message = 1;
 }
 
-message OffloadingReply {
+message SpeechRecognitionReply {
     string message = 1;
 }
